@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { computeBullseye } from '../../core/angle/angleMath';
 import { getCanvasPalette } from '../../core/theme/canvasPalette';
 import type { ResolvedColorScheme } from '../../core/theme/useColorScheme';
@@ -21,6 +21,29 @@ export function LevelCanvas({
   gammaDeg,
 }: LevelCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [size, setSize] = useState(280);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const parent = canvas.parentElement;
+    if (!parent) return;
+
+    const measure = () => {
+      const rect = parent.getBoundingClientRect();
+      const next = Math.max(150, Math.round(Math.min(rect.width || 280, rect.height || 280)));
+      setSize((prev) => (prev === next ? prev : next));
+    };
+
+    measure();
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(measure);
+      ro.observe(parent);
+      return () => ro.disconnect();
+    }
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -28,8 +51,6 @@ export function LevelCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const size = Math.max(220, Math.round(Math.min(rect.width || 320, rect.height || 320)));
     const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.round(size * dpr);
     canvas.height = Math.round(size * dpr);
@@ -50,7 +71,7 @@ export function LevelCanvas({
 
     const cx = size / 2;
     const cy = size / 2;
-    const r = size * 0.42;
+    const r = size * 0.43;
 
     ctx.clearRect(0, 0, size, size);
     ctx.fillStyle = bg;
@@ -71,7 +92,7 @@ export function LevelCanvas({
         const rad = (deg * Math.PI) / 180;
         const isMajor = deg % 30 === 0;
         const isMid = deg % 15 === 0;
-        const tickLen = isMajor ? 14 : isMid ? 9 : 5;
+        const tickLen = isMajor ? Math.max(10, r * 0.13) : isMid ? Math.max(7, r * 0.08) : 4;
         ctx.strokeStyle = isMajor ? textPrimary : textMuted;
         ctx.lineWidth = isMajor ? 1.6 : 1;
         ctx.beginPath();
@@ -81,11 +102,12 @@ export function LevelCanvas({
 
         if (deg % 90 === 0) {
           ctx.fillStyle = textMuted;
-          ctx.font = '600 11px "IBM Plex Mono", monospace';
+          ctx.font = `600 ${size < 200 ? 10 : 11}px "IBM Plex Mono", monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           const label = deg === 0 || deg === 180 ? '0°' : '90°';
-          ctx.fillText(label, cx + Math.cos(rad) * (r - 26), cy + Math.sin(rad) * (r - 26));
+          const labelR = r - tickLen - 11;
+          ctx.fillText(label, cx + Math.cos(rad) * labelR, cy + Math.sin(rad) * labelR);
         }
       }
 
@@ -133,11 +155,11 @@ export function LevelCanvas({
       // Center pivot
       ctx.fillStyle = activeColor;
       ctx.beginPath();
-      ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 6.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = bg;
       ctx.beginPath();
-      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 2.8, 0, Math.PI * 2);
       ctx.fill();
     } else {
       // 2D Surface Bullseye Spirit Level
@@ -164,35 +186,37 @@ export function LevelCanvas({
       ctx.stroke();
 
       // Liquid bubble
-      const bx = cx + bullseye.x * (r - 18);
-      const by = cy + bullseye.y * (r - 18);
+      const bubbleR = Math.max(12, r * 0.14);
+      const bx = cx + bullseye.x * (r - bubbleR - 4);
+      const by = cy + bullseye.y * (r - bubbleR - 4);
 
       ctx.fillStyle = activeColor;
       ctx.globalAlpha = 0.25;
       ctx.beginPath();
-      ctx.arc(bx, by, 24, 0, Math.PI * 2);
+      ctx.arc(bx, by, bubbleR * 1.45, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
 
       ctx.fillStyle = activeColor;
       ctx.beginPath();
-      ctx.arc(bx, by, 16, 0, Math.PI * 2);
+      ctx.arc(bx, by, bubbleR, 0, Math.PI * 2);
       ctx.fill();
 
       // Specular highlight on bubble
       ctx.fillStyle = '#ffffff';
       ctx.globalAlpha = 0.55;
       ctx.beginPath();
-      ctx.arc(bx - 5, by - 5, 4.5, 0, Math.PI * 2);
+      ctx.arc(bx - bubbleR * 0.3, by - bubbleR * 0.3, bubbleR * 0.28, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
-  }, [mode, colorScheme, angleDeg, tareDeg, betaDeg, gammaDeg]);
+  }, [mode, colorScheme, size, angleDeg, tareDeg, betaDeg, gammaDeg]);
 
   return (
     <canvas
       ref={canvasRef}
       className="gauge-canvas"
+      style={{ width: size, height: size }}
       aria-label={mode === 'edge' ? 'Digital inclinometer dial' : '2D bullseye spirit level'}
     />
   );

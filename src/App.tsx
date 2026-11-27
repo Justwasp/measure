@@ -161,7 +161,7 @@ function MeasureAppShell() {
   })();
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${activeTab === 'angle' ? 'angle-mode' : ''}`}>
       <header className="app-header">
         <div className="brand-block">
           <div className="brand-mark" aria-hidden="true">

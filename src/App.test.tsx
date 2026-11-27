@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 
 describe('Measure PWA integration flows', () => {
@@ -76,14 +76,27 @@ describe('Measure PWA integration flows', () => {
     expect(screen.getByTestId('photo-canvas-stage')).not.toHaveClass('fullscreen');
   });
 
-  it('switches to Angle and Camera tabs and checks Rangefinder and AR 3D fallback', async () => {
+  it('switches to Angle and Camera tabs, requests portrait lock on Angle, and checks Rangefinder/AR', async () => {
     const user = userEvent.setup();
+    const lockMock = vi.fn().mockResolvedValue(undefined);
+    const unlockMock = vi.fn();
+    Object.defineProperty(window.screen, 'orientation', {
+      value: { lock: lockMock, unlock: unlockMock },
+      configurable: true,
+    });
+
     render(<App />);
 
     await user.click(screen.getByRole('tab', { name: 'Angle' }));
     expect(screen.getByTestId('angle-readout')).toHaveTextContent('0.0°');
+    expect(lockMock).toHaveBeenCalledWith('portrait');
+
+    // Toggle desktop simulator on and verify simulated roll slider appears
+    await user.click(screen.getByTestId('angle-simulator-toggle'));
+    expect(screen.getByLabelText('Simulated roll angle')).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Camera' }));
+    expect(unlockMock).toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Rangefinder' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'AR 3D (WebXR)' })).toBeInTheDocument();
     expect(screen.getByTestId('trigo-distance')).toHaveTextContent(/\d+\.\d{2} m/);

@@ -77,6 +77,8 @@ export const TRANSLATIONS = {
       enableCamera: 'Start Camera Overlay',
       stopCamera: 'Stop Camera',
       rotateReticle: 'Reticle Angle',
+      iosOrientationTip:
+        'iOS Safari blocks web orientation lock — enable Portrait Lock in Control Center to stop rotation.',
     },
     camera: {
       modeRef: 'Reference Photo',
@@ -251,6 +253,8 @@ export const TRANSLATIONS = {
       enableCamera: 'Включить камеру',
       stopCamera: 'Выключить камеру',
       rotateReticle: 'Угол сетки',
+      iosOrientationTip:
+        'iOS Safari не позволяет сайтам блокировать поворот — включите блокировку ориентации в Пункте управления iPhone.',
     },
     camera: {
       modeRef: 'По эталону',
