@@ -634,10 +634,11 @@ dialog.instrument-dialog::backdrop {
   }
 
   .angle-visual-col {
-    width: 100%;
-    height: min(220px, calc(100dvh - 150px));
-    max-height: 220px;
-    max-width: 220px;
+    width: auto;
+    aspect-ratio: 1 / 1;
+    height: min(196px, calc(100dvh - 185px));
+    max-height: 196px;
+    max-width: 196px;
     margin: 0 auto;
   }
 
