@@ -28,6 +28,8 @@ export function HistoryDialog({
         return t.history.catRuler;
       case 'angle':
         return t.history.catAngle;
+      case 'photo':
+        return t.history.catPhoto;
       case 'camera-ref':
         return t.history.catCameraRef;
       case 'camera-trigo':

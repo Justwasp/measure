@@ -7,6 +7,7 @@ export const TRANSLATIONS = {
     tabs: {
       ruler: 'Ruler',
       angle: 'Angle',
+      photo: 'Photo',
       camera: 'Camera',
     },
     header: {
@@ -143,9 +144,33 @@ export const TRANSLATIONS = {
       close: 'Close',
       catRuler: 'Ruler',
       catAngle: 'Angle',
+      catPhoto: 'Photo Studio',
       catCameraRef: 'Photo Ref',
       catCameraTrigo: 'Rangefinder',
       catCameraAr: 'AR 3D',
+    },
+    photo: {
+      intro:
+        'Upload any photo or blueprint (car, monitor, room, CAD), set one known dimension, and measure unlimited lengths, boxes, and diagonals.',
+      uploadPhoto: 'Upload Photo',
+      demoCar: 'Car Blueprint',
+      demoWall: '3D Wall Demo',
+      mode2d: '2D Scale (2 pts)',
+      modePerspective: 'Perspective (4 pts)',
+      presetLabel: 'Known Object Preset',
+      knownLength: 'Known Length',
+      knownWidth: 'Ref Width',
+      knownHeight: 'Ref Height',
+      emptyPrompt: 'Upload a photo/blueprint, take a picture, or load a demo above to start measuring.',
+      addLine: 'Line',
+      addBox: 'Box W×H',
+      panMode: 'Pan view',
+      exportPng: 'Export PNG',
+      saveLog: 'Save',
+      hint2d: 'Drag CYAN R1–R2 onto known dimension · Drag colored pins to measure anything on the plane',
+      hintPerspective:
+        'Place CYAN 1–2–3–4 on corners of a known rectangle (e.g. door/window/monitor) to measure accurately in 3D perspective',
+      openStudioFromCamera: 'Need to measure a photo or blueprint? Open Photo Studio →',
     },
   },
   ru: {
@@ -154,6 +179,7 @@ export const TRANSLATIONS = {
     tabs: {
       ruler: 'Линейка',
       angle: 'Угломер',
+      photo: 'Фото',
       camera: 'Камера',
     },
     header: {
@@ -290,9 +316,33 @@ export const TRANSLATIONS = {
       close: 'Закрыть',
       catRuler: 'Линейка',
       catAngle: 'Угломер',
+      catPhoto: 'Фото-студия',
       catCameraRef: 'Фото-эталон',
       catCameraTrigo: 'Дальномер',
       catCameraAr: 'AR 3D',
+    },
+    photo: {
+      intro:
+        'Загрузите любое фото или чертёж (авто, монитор, комнату, план), укажите один известный размер и измеряйте любые габариты и диагонали.',
+      uploadPhoto: 'Загрузить фото',
+      demoCar: 'Чертёж авто',
+      demoWall: '3D-стена',
+      mode2d: '2D масштаб (2 т.)',
+      modePerspective: 'Перспектива (4 т.)',
+      presetLabel: 'Пресет известного объекта',
+      knownLength: 'Известная длина',
+      knownWidth: 'Ширина этал.',
+      knownHeight: 'Высота этал.',
+      emptyPrompt: 'Загрузите фото/чертёж, сделайте снимок или откройте демо выше, чтобы начать замер.',
+      addLine: 'Линия',
+      addBox: 'Рамка W×H',
+      panMode: 'Перемещение',
+      exportPng: 'Скачать PNG',
+      saveLog: 'Сохранить',
+      hint2d: 'Наведите ГОЛУБЫЕ R1–R2 на известный размер · Тяните цветные маркеры для замера любых габаритов',
+      hintPerspective:
+        'Поставьте ГОЛУБЫЕ 1–2–3–4 по углам известного прямоугольника (дверь, окно, монитор) для точных замеров в перспективе',
+      openStudioFromCamera: 'Нужно измерить фото или чертёж? Открыть Фото-студию →',
     },
   },
 } as const;

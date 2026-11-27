@@ -240,7 +240,7 @@ select {
 /* Bottom Mode Navigation */
 .bottom-nav {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 4px;
   background: var(--bg-surface);
   border-top: 1px solid var(--border-subtle);
@@ -698,4 +698,104 @@ dialog.instrument-dialog::backdrop {
   z-index: 50;
   pointer-events: none;
   box-shadow: var(--shadow-hud);
+}
+
+/* Photo / Blueprint Measure Studio */
+.photo-studio {
+  max-width: 860px;
+}
+
+.photo-canvas-stage {
+  position: relative;
+  width: 100%;
+  height: clamp(280px, 46dvh, 480px);
+  background: #090c10;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  touch-action: none;
+  user-select: none;
+}
+
+.photo-canvas-stage canvas,
+.photo-canvas-stage video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.photo-canvas-stage video {
+  object-fit: contain;
+}
+
+.photo-empty-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #9aa7b5;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(25, 34, 46, 0.55), rgba(9, 12, 16, 0.85));
+}
+
+.photo-measurements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.photo-measure-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-chassis);
+  flex-wrap: wrap;
+}
+
+.photo-measure-row.selected {
+  border-color: var(--accent-primary);
+  background: var(--accent-primary-soft);
+}
+
+.color-chip {
+  width: 10px;
+  height: 22px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.measure-label-input {
+  width: 112px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  min-block-size: 28px;
+}
+
+.measure-label-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  background: var(--bg-surface);
+}
+
+.measure-result-cell {
+  flex: 1;
+  min-width: 140px;
+  font-size: 13px;
+}
+
+.measure-sub {
+  color: var(--text-secondary);
+  font-size: 11px;
 }

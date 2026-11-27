@@ -6,7 +6,6 @@ import { App } from './App';
 describe('Measure PWA integration flows', () => {
   beforeEach(() => {
     localStorage.clear();
-    // Ensure <meta name="color-scheme"> exists in jsdom head
     let meta = document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]');
     if (!meta) {
       meta = document.createElement('meta');
@@ -18,17 +17,19 @@ describe('Measure PWA integration flows', () => {
     }
   });
 
-  it('defaults to English UI and toggles cleanly to Russian and back', async () => {
+  it('defaults to English UI with 4 instrument tabs and toggles cleanly to Russian', async () => {
     const user = userEvent.setup();
     render(<App />);
 
     expect(screen.getByRole('tab', { name: 'Ruler' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: 'Angle' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Photo' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Camera' })).toBeInTheDocument();
 
     await user.click(screen.getByTestId('lang-toggle-btn'));
     expect(screen.getByRole('tab', { name: 'Линейка' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Угломер' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Фото' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Камера' })).toBeInTheDocument();
   });
 
@@ -40,14 +41,35 @@ describe('Measure PWA integration flows', () => {
     await user.type(offsetInput, '150');
     expect(screen.getByText(/\+150\.0 mm/)).toBeInTheDocument();
 
-    // Save measurement and verify History dialog displays it
     await user.click(screen.getByRole('button', { name: /Save/i }));
     await user.click(screen.getByTestId('open-history-btn'));
     expect(screen.getByRole('heading', { name: 'Measurement Log' })).toBeInTheDocument();
     expect(screen.getByText(/Base: \+150\.0 mm/)).toBeInTheDocument();
   });
 
-  it('switches to Angle mode, simulates tilt, tares relative angle, and checks Camera modes', async () => {
+  it('measures car dimensions and 3D perspective wall dimensions in the Photo Studio tab', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('tab', { name: 'Photo' }));
+    await user.click(screen.getByRole('button', { name: /Car Blueprint/i }));
+
+    // Car blueprint demo: 660 mm wheel -> 4.52 m x 1.46 m overall box & 2.72 m wheelbase
+    const list = screen.getByTestId('photo-measurements-list');
+    expect(list).toHaveTextContent('4.52 m × 1.46 m');
+    expect(list).toHaveTextContent('2.72 m');
+
+    // Add an extra measurement line dynamically
+    await user.click(screen.getByRole('button', { name: /^Line$/i }));
+    expect(screen.getAllByLabelText('Measurement label')).toHaveLength(3);
+
+    // Switch to 3D Perspective Wall demo (4-point homography)
+    await user.click(screen.getByRole('button', { name: /3D Wall Demo/i }));
+    expect(screen.getByTestId('photo-measurements-list')).toHaveTextContent('2.50 m');
+    expect(screen.getByTestId('photo-measurements-list')).toHaveTextContent('2.70 m');
+  });
+
+  it('switches to Angle and Camera tabs and checks Rangefinder and AR 3D fallback', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -55,15 +77,10 @@ describe('Measure PWA integration flows', () => {
     expect(screen.getByTestId('angle-readout')).toHaveTextContent('0.0°');
 
     await user.click(screen.getByRole('tab', { name: 'Camera' }));
-    expect(screen.getByRole('button', { name: 'Reference Photo' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Rangefinder' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'AR 3D (WebXR)' })).toBeInTheDocument();
-
-    // Switch to Rangefinder and verify trigonometric distance calculation works
-    await user.click(screen.getByRole('button', { name: 'Rangefinder' }));
     expect(screen.getByTestId('trigo-distance')).toHaveTextContent(/\d+\.\d{2} m/);
 
-    // Switch to AR 3D and verify honest fallback notice on non-WebXR browser
     await user.click(screen.getByRole('button', { name: 'AR 3D (WebXR)' }));
     expect(screen.getByText(/WebXR immersive-ar is not supported/i)).toBeInTheDocument();
   });

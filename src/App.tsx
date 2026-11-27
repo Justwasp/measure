@@ -3,6 +3,7 @@ import {
   Camera,
   Compass,
   History,
+  Image as ImageIcon,
   Languages,
   Moon,
   Ruler,
@@ -31,11 +32,12 @@ import { AngleView } from './features/angle/AngleView';
 import { CalibrationDialog } from './features/calibration/CalibrationDialog';
 import { CameraView } from './features/camera/CameraView';
 import { HistoryDialog } from './features/history/HistoryDialog';
+import { PhotoMeasureView } from './features/photo/PhotoMeasureView';
 import { RulerView } from './features/ruler/RulerView';
 import { useI18n } from './i18n/I18nContext';
 import { I18nProvider } from './i18n/I18nProvider';
 
-type ActiveTab = 'ruler' | 'angle' | 'camera';
+type ActiveTab = 'ruler' | 'angle' | 'photo' | 'camera';
 
 function MeasureAppShell() {
   const { t, locale, toggleLocale } = useI18n();
@@ -237,7 +239,17 @@ function MeasureAppShell() {
             onSaveMeasurement={(val, detail) => handleSaveMeasurement('angle', val, detail)}
           />
         )}
-        {activeTab === 'camera' && <CameraView onSaveMeasurement={handleSaveMeasurement} />}
+        {activeTab === 'photo' && (
+          <PhotoMeasureView
+            onSaveMeasurement={(val, detail) => handleSaveMeasurement('photo', val, detail)}
+          />
+        )}
+        {activeTab === 'camera' && (
+          <CameraView
+            onSaveMeasurement={handleSaveMeasurement}
+            onOpenPhotoStudio={() => setActiveTab('photo')}
+          />
+        )}
       </main>
 
       <nav className="bottom-nav" role="tablist" aria-label="Measurement instruments">
@@ -261,6 +273,17 @@ function MeasureAppShell() {
         >
           <Compass size={20} aria-hidden="true" />
           <span>{t.tabs.angle}</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          className="nav-tab"
+          aria-selected={activeTab === 'photo'}
+          onClick={() => setActiveTab('photo')}
+        >
+          <ImageIcon size={20} aria-hidden="true" />
+          <span>{t.tabs.photo}</span>
         </button>
 
         <button

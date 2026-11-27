@@ -1,4 +1,10 @@
-export type MeasurementCategory = 'ruler' | 'angle' | 'camera-ref' | 'camera-trigo' | 'camera-ar';
+export type MeasurementCategory =
+  | 'ruler'
+  | 'angle'
+  | 'photo'
+  | 'camera-ref'
+  | 'camera-trigo'
+  | 'camera-ar';
 
 export interface MeasurementRecord {
   id: string;

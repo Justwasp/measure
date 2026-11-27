@@ -32,7 +32,10 @@ if (typeof HTMLCanvasElement !== 'undefined') {
     closePath: noop,
     moveTo: noop,
     lineTo: noop,
+    quadraticCurveTo: noop,
+    bezierCurveTo: noop,
     arc: noop,
+    setTransform: noop,
     stroke: noop,
     fill: noop,
     fillText: noop,
@@ -53,6 +56,10 @@ if (typeof HTMLCanvasElement !== 'undefined') {
   };
   Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
     value: () => mockContext,
+    configurable: true,
+  });
+  Object.defineProperty(HTMLCanvasElement.prototype, 'toDataURL', {
+    value: () => 'data:image/png;base64,iVBORw0KGgo=',
     configurable: true,
   });
 }
