@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      try {
+        var savedScheme = localStorage.getItem('color-scheme');
+        if (savedScheme === 'light' || savedScheme === 'dark') {
+          document.querySelector('meta[name="color-scheme"]').content = savedScheme;
+        }
+      } catch (_) {}
+    </script>
+    <meta name="theme-color" content="#0c0f12" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Measure" />
+    <meta
+      name="description"
+      content="Precision pocket measurement PWA: calibrated L-edge scrollable ruler, gyroscope protractor & spirit level, and camera rangefinder."
+    />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>Measure — Precision Pocket Instrument</title>
+    <script type="module" crossorigin src="/measure/assets/index-fN7t5rHd.js"></script>
+    <link rel="stylesheet" crossorigin href="/measure/assets/index-DGofJn1k.css">
+  <link rel="manifest" href="/measure/manifest.webmanifest"></head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
