@@ -717,6 +717,86 @@ dialog.instrument-dialog::backdrop {
   user-select: none;
 }
 
+.photo-canvas-stage.fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  border-radius: 0;
+  border: none;
+  z-index: 60;
+}
+
+.photo-fs-fab {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(11, 14, 17, 0.82);
+  color: #eef2f6;
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+
+.photo-fs-topbar {
+  position: absolute;
+  left: max(10px, env(safe-area-inset-left, 0px));
+  right: max(10px, env(safe-area-inset-right, 0px));
+  top: max(10px, env(safe-area-inset-top, 0px));
+  z-index: 65;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.photo-fs-topbar > * {
+  pointer-events: auto;
+}
+
+.photo-fs-readout {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(11, 14, 17, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #eef2f6;
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+  max-width: 68vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-fs-bottombar {
+  position: absolute;
+  left: max(10px, env(safe-area-inset-left, 0px));
+  right: max(10px, env(safe-area-inset-right, 0px));
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  z-index: 65;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px;
+  border-radius: var(--radius-lg);
+  background: rgba(11, 14, 17, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+}
+
 .photo-canvas-stage canvas,
 .photo-canvas-stage video {
   position: absolute;

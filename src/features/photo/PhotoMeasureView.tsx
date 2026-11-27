@@ -16,6 +16,8 @@ import {
   Hand,
   Layers,
   Magnet,
+  Maximize2,
+  Minimize2,
   Plus,
   Square,
   Trash2,
@@ -73,6 +75,8 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
   const [presetId, setPresetId] = useState<string>('car-tire');
   const [orthoSnap, setOrthoSnap] = useState(false);
   const [panMode, setPanMode] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [stageSize, setStageSize] = useState({ w: 600, h: 380 });
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
@@ -107,11 +111,20 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
   const [selectedId, setSelectedId] = useState<string | null>('m-1');
   const [dragTarget, setDragTarget] = useState<DragTarget>({ kind: 'none' });
 
+  const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const loadedImageRef = useRef<HTMLImageElement | null>(null);
-  const canvasDimsRef = useRef({ w: 600, h: 380 });
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStartRef = useRef<{
+    dist: number;
+    zoom: number;
+    midX: number;
+    midY: number;
+    panX: number;
+    panY: number;
+  } | null>(null);
 
   const formatInputValue = useCallback((mm: number, u: PhotoUnit) => {
     const val = mmToPhotoUnit(mm, u);
@@ -124,6 +137,36 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
       streamRef.current?.getTracks().forEach((tr) => tr.stop());
     };
   }, []);
+
+  // Track canvas container size across fullscreen toggles and phone portrait/landscape rotation
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      const w = Math.max(240, Math.round(rect.width || 600));
+      const h = Math.max(220, Math.round(rect.height || 380));
+      setStageSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+    };
+    measure();
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(measure);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [isFullscreen]);
+
+  // Allow Escape key to close fullscreen overlay cleanly
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isFullscreen]);
 
   // Load uploaded/captured image into HTMLImageElement
   useEffect(() => {
@@ -181,10 +224,7 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const w = Math.max(260, Math.round(rect.width || 600));
-    const h = Math.max(240, Math.round(rect.height || 380));
-    canvasDimsRef.current = { w, h };
+    const { w, h } = stageSize;
 
     const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.round(w * dpr);
@@ -215,6 +255,7 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
   }, [
     imageUrl,
     imgSize,
+    stageSize,
     zoom,
     pan,
     mode,
@@ -410,10 +451,27 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
     const rect = canvas.getBoundingClientRect();
     const cx = e.clientX - rect.left;
     const cy = e.clientY - rect.top;
-    const { w, h } = canvasDimsRef.current;
+    const { w, h } = stageSize;
     const vp = computeImageViewport(imgSize.w, imgSize.h, w, h, zoom, pan.x, pan.y);
 
     canvas.setPointerCapture?.(e.pointerId);
+    activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    // Two-finger pinch-zoom & pan on mobile touch screens
+    if (activePointersRef.current.size === 2) {
+      const pts = Array.from(activePointersRef.current.values());
+      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      pinchStartRef.current = {
+        dist: Math.max(10, dist),
+        zoom,
+        midX: (pts[0].x + pts[1].x) / 2,
+        midY: (pts[0].y + pts[1].y) / 2,
+        panX: pan.x,
+        panY: pan.y,
+      };
+      setDragTarget({ kind: 'none' });
+      return;
+    }
 
     if (panMode) {
       setDragTarget({
@@ -473,6 +531,28 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
   };
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (activePointersRef.current.has(e.pointerId)) {
+      activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+
+    // Handle active 2-finger pinch-zoom + pan
+    if (activePointersRef.current.size === 2 && pinchStartRef.current) {
+      const pts = Array.from(activePointersRef.current.values());
+      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      const midX = (pts[0].x + pts[1].x) / 2;
+      const midY = (pts[0].y + pts[1].y) / 2;
+      const nextZoom = Math.max(
+        1,
+        Math.min(6, Number((pinchStartRef.current.zoom * (dist / pinchStartRef.current.dist)).toFixed(2))),
+      );
+      setZoom(nextZoom);
+      setPan({
+        x: pinchStartRef.current.panX + (midX - pinchStartRef.current.midX),
+        y: pinchStartRef.current.panY + (midY - pinchStartRef.current.midY),
+      });
+      return;
+    }
+
     if (dragTarget.kind === 'none' || !canvasRef.current) return;
 
     if (dragTarget.kind === 'pan') {
@@ -486,7 +566,7 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
     const rect = canvasRef.current.getBoundingClientRect();
     const cx = e.clientX - rect.left;
     const cy = e.clientY - rect.top;
-    const { w, h } = canvasDimsRef.current;
+    const { w, h } = stageSize;
     const vp = computeImageViewport(imgSize.w, imgSize.h, w, h, zoom, pan.x, pan.y);
     const raw = canvasToNormalized({ x: cx, y: cy }, vp);
     const clamped: Point2D = {
@@ -531,7 +611,23 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
     }
   };
 
-  const handlePointerUp = () => setDragTarget({ kind: 'none' });
+  const handlePointerUp = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    activePointersRef.current.delete(e.pointerId);
+    if (activePointersRef.current.size < 2) {
+      pinchStartRef.current = null;
+    }
+    setDragTarget({ kind: 'none' });
+  };
+
+  const selectedItem = measurements.find((m) => m.id === selectedId) ?? measurements[0] ?? null;
+  const selectedMetrics = selectedItem ? computePhotoMeasurement(selectedItem, projector) : null;
+  const activeReadoutText = (() => {
+    if (!selectedItem || !selectedMetrics) return null;
+    if (selectedMetrics.kind === 'line') {
+      return `${selectedItem.label}: ${formatPhotoLength(selectedMetrics.lengthMm, unit)}`;
+    }
+    return `${selectedItem.label}: ${formatPhotoLength(selectedMetrics.widthMm, unit)} × ${formatPhotoLength(selectedMetrics.heightMm, unit)} (⌀ ${formatPhotoLength(selectedMetrics.diagonalMm, unit)})`;
+  })();
 
   const handleWheel = (e: ReactWheelEvent<HTMLCanvasElement>) => {
     if (!imageUrl || liveCamera) return;
@@ -697,8 +793,12 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
           )}
         </div>
 
-        {/* Interactive Photo / Blueprint Canvas */}
-        <div className="photo-canvas-stage">
+        {/* Interactive Photo / Blueprint Canvas (supports edge-to-edge Fullscreen on iOS/Android) */}
+        <div
+          ref={stageRef}
+          className={`photo-canvas-stage ${isFullscreen ? 'fullscreen' : ''}`}
+          data-testid="photo-canvas-stage"
+        >
           {liveCamera ? (
             <video ref={videoRef} playsInline muted />
           ) : (
@@ -716,6 +816,107 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
                 <div className="photo-empty-overlay">
                   <p style={{ margin: 0, maxWidth: 320 }}>{t.photo.emptyPrompt}</p>
                 </div>
+              )}
+
+              {/* Quick Fullscreen expand button on inline canvas */}
+              {!isFullscreen && imageUrl && (
+                <button
+                  type="button"
+                  className="photo-fs-fab"
+                  onClick={() => setIsFullscreen(true)}
+                  aria-label={t.photo.fullscreen}
+                  data-testid="photo-fullscreen-btn"
+                >
+                  <Maximize2 size={16} aria-hidden="true" />
+                  <span>{t.photo.fullscreen}</span>
+                </button>
+              )}
+
+              {/* Edge-to-edge Fullscreen Floating HUD */}
+              {isFullscreen && (
+                <>
+                  <div className="photo-fs-topbar">
+                    <div className="photo-fs-readout mono" data-testid="photo-fs-readout">
+                      {activeReadoutText ?? `REF ${formatPhotoLength(refLengthMm, unit)}`}
+                    </div>
+                    <button
+                      type="button"
+                      className="btn primary"
+                      onClick={() => setIsFullscreen(false)}
+                      data-testid="photo-exit-fullscreen-btn"
+                    >
+                      <Minimize2 size={15} aria-hidden="true" />
+                      {t.photo.exitFullscreen}
+                    </button>
+                  </div>
+
+                  <div className="photo-fs-bottombar">
+                    <button
+                      type="button"
+                      className="btn primary"
+                      onClick={() => addMeasurement('line')}
+                    >
+                      <Plus size={14} aria-hidden="true" />
+                      {t.photo.addLine}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn secondary"
+                      onClick={() => addMeasurement('box')}
+                    >
+                      <Square size={14} aria-hidden="true" />
+                      {t.photo.addBox}
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${orthoSnap ? 'active' : ''}`}
+                      onClick={() => setOrthoSnap((prev) => !prev)}
+                    >
+                      <Magnet size={14} aria-hidden="true" />
+                      0°/90°
+                    </button>
+                    <button
+                      type="button"
+                      className={`icon-btn ${panMode ? 'active' : ''}`}
+                      aria-label={t.photo.panMode}
+                      onClick={() => setPanMode((prev) => !prev)}
+                    >
+                      <Hand size={15} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      aria-label="Zoom out"
+                      onClick={() =>
+                        setZoom((z) => {
+                          const next = Math.max(1, Number((z - 0.5).toFixed(2)));
+                          if (next === 1) setPan({ x: 0, y: 0 });
+                          return next;
+                        })
+                      }
+                    >
+                      <ZoomOut size={15} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn mono"
+                      onClick={() => {
+                        setZoom(1);
+                        setPan({ x: 0, y: 0 });
+                      }}
+                    >
+                      {Math.round(zoom * 100)}%
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      aria-label="Zoom in"
+                      onClick={() => setZoom((z) => Math.min(6, Number((z + 0.5).toFixed(2))))}
+                    >
+                      <ZoomIn size={15} aria-hidden="true" />
+                    </button>
+                  </div>
+                </>
               )}
             </>
           )}
@@ -782,6 +983,15 @@ export function PhotoMeasureView({ onSaveMeasurement }: PhotoMeasureViewProps) {
               onClick={() => setZoom((z) => Math.min(6, Number((z + 0.5).toFixed(2))))}
             >
               <ZoomIn size={15} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="btn secondary"
+              disabled={!imageUrl || liveCamera}
+              onClick={() => setIsFullscreen(true)}
+            >
+              <Maximize2 size={14} aria-hidden="true" />
+              {t.photo.fullscreen}
             </button>
           </div>
         </div>

@@ -67,6 +67,13 @@ describe('Measure PWA integration flows', () => {
     await user.click(screen.getByRole('button', { name: /3D Wall Demo/i }));
     expect(screen.getByTestId('photo-measurements-list')).toHaveTextContent('2.50 m');
     expect(screen.getByTestId('photo-measurements-list')).toHaveTextContent('2.70 m');
+
+    // Toggle edge-to-edge Fullscreen mode on & off
+    await user.click(screen.getByTestId('photo-fullscreen-btn'));
+    expect(screen.getByTestId('photo-canvas-stage')).toHaveClass('fullscreen');
+    expect(screen.getByTestId('photo-fs-readout')).toHaveTextContent('2.50 m');
+    await user.click(screen.getByTestId('photo-exit-fullscreen-btn'));
+    expect(screen.getByTestId('photo-canvas-stage')).not.toHaveClass('fullscreen');
   });
 
   it('switches to Angle and Camera tabs and checks Rangefinder and AR 3D fallback', async () => {
